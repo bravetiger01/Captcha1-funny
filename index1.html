@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .captcha-container {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 400px;
+      margin: 20px auto;
+      padding: 20px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      background: #f8fafc;
+      text-align: center;
+    }
+
+    .emoji-face {
+      font-size: 80px;
+      margin: 20px 0;
+      transition: transform 0.3s ease;
+    }
+
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 20px 0;
+    }
+
+    .item {
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 15px 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 24px;
+    }
+
+    .item:hover {
+      transform: scale(1.05);
+      background: #f0f9ff;
+    }
+
+    .item.clicked {
+      opacity: 0.5;
+      transform: scale(0.95);
+      pointer-events: none;
+    }
+
+    .message {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+
+    .success {
+      background: #86efac;
+      color: #064e3b;
+    }
+
+    .progress {
+      background: #bae6fd;
+      color: #075985;
+    }
+
+    .reset-btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 15px;
+      font-size: 16px;
+      display: none;
+    }
+
+    .reset-btn:hover {
+      background: #2563eb;
+    }
+
+    .shake {
+      animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-10deg); }
+      75% { transform: rotate(10deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="captcha-container">
+    <h3>Make the Grumpy Face Laugh! 😤</h3>
+    <p>Click on 3 things that might make someone laugh</p>
+    
+    <div id="emojiface" class="emoji-face">😤</div>
+    
+    <div id="itemsGrid" class="items-grid">
+      <!-- Grid items will be generated dynamically -->
+    </div>
+    
+    <div id="message" class="message"></div>
+    <button id="resetBtn" class="reset-btn">Try Again</button>
+  </div>
+
+  <script>
+    let funnyThingsFound = 0;
+    const requiredFunny = 3;
+    const emojiStages = ['😤', '😐', '😏', '🤣'];
+    
+    // Multiple sets of emojis to rotate through
+    const emojiSets = [
+      {
+        funny: ['🐒', '🤪', '🎪', '🎭', '🪄'],
+        normal: ['📱', '📝', '🎒', '📚']
+      },
+      {
+        funny: ['🦄', '🎈', '🤹‍♂️', '🌈', '🎠'],
+        normal: ['🖊️', '⌚', '🎧', '💼']
+      },
+      {
+        funny: ['🦒', '🎨', '🎮', '🎪', '🎭'],
+        normal: ['📞', '📓', '🖥️', '🗂️']
+      },
+      {
+        funny: ['🐼', '🎯', '🎲', '🎸', '🎡'],
+        normal: ['📋', '🖌️', '📁', '📅']
+      }
+    ];
+    
+    const messageEl = document.getElementById('message');
+    const resetBtn = document.getElementById('resetBtn');
+    const emojiEl = document.getElementById('emojiface');
+    const itemsGrid = document.getElementById('itemsGrid');
+    
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+    
+    function generateGrid() {
+      // Pick a random emoji set
+      const currentSet = emojiSets[Math.floor(Math.random() * emojiSets.length)];
+      
+      // Combine and shuffle emojis
+      const allEmojis = [
+        ...currentSet.funny.map(emoji => ({ emoji, funny: true })),
+        ...currentSet.normal.map(emoji => ({ emoji, funny: false }))
+      ];
+      
+      const shuffledEmojis = shuffleArray([...allEmojis]);
+      
+      // Clear existing grid
+      itemsGrid.innerHTML = '';
+      
+      // Create new grid items
+      shuffledEmojis.forEach(({ emoji, funny }) => {
+        const item = document.createElement('div');
+        item.className = 'item';
+        item.textContent = emoji;
+        if (funny) item.dataset.funny = 'true';
+        
+        item.addEventListener('click', () => handleItemClick(item));
+        itemsGrid.appendChild(item);
+      });
+    }
+    
+    function updateEmoji() {
+      const emojiIndex = Math.min(Math.floor(funnyThingsFound * (emojiStages.length - 1) / requiredFunny), emojiStages.length - 1);
+      emojiEl.textContent = emojiStages[emojiIndex];
+    }
+
+    function handleItemClick(item) {
+      if (item.classList.contains('clicked')) return;
+      
+      item.classList.add('clicked');
+      
+      if (item.dataset.funny === 'true') {
+        funnyThingsFound++;
+        emojiEl.classList.add('shake');
+        setTimeout(() => emojiEl.classList.remove('shake'), 500);
+        updateEmoji();
+        
+        if (funnyThingsFound === requiredFunny) {
+          messageEl.textContent = '🎉 Success! You made them laugh! You must be human!';
+          messageEl.className = 'message success';
+          resetBtn.style.display = 'block';
+        } else {
+          messageEl.textContent = `Good choice! Find ${requiredFunny - funnyThingsFound} more funny things!`;
+          messageEl.className = 'message progress';
+        }
+      } else {
+        messageEl.textContent = "Hmm, that's not very funny...";
+        messageEl.className = 'message progress';
+      }
+    }
+
+    resetBtn.addEventListener('click', () => {
+      funnyThingsFound = 0;
+      updateEmoji();
+      messageEl.textContent = '';
+      messageEl.className = 'message';
+      resetBtn.style.display = 'none';
+      generateGrid(); // Generate new grid with different emojis
+    });
+
+    // Initial grid generation
+    generateGrid();
+  </script>
+</body>
+</html>
